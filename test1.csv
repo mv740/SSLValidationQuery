@@ -1,0 +1,31 @@
+rank,domain,isHTTPS,SSLversion,key-type,key-size,signature-algorithm,isHSTS,isHSTSlong
+1,google.com,true,TLSv1.2,EC, 256 ,SHA256,false,false
+2,facebook.com,true,TLSv1.2,EC, 256 ,SHA1,true,true
+3,youtube.com,true,TLSv1.2,EC, 256 ,SHA256,true,false
+4,baidu.com,true,TLSv1.2,RSA, 2048 ,SHA1,false,false
+5,yahoo.com,true,TLSv1.2,RSA, 2048 ,SHA256,false,false
+6,amazon.com,true,TLSv1.2,RSA, 2048 ,SHA1,false,false
+7,wikipedia.org,true,TLSv1.2,EC, 256 ,SHA256,true,true
+8,qq.com,true,TLSv1.1,RSA, 2048 ,SHA256,false,false
+9,twitter.com,false,?,?,?,?,?,?
+10,google.co.in,true,TLSv1.2,RSA, 2048 ,SHA256,false,false
+59600,cn-weitai.com,true,TLSv1.2,RSA, 2048 ,SHA256,false,false
+59601,josei-bigaku.jp,false,?,?,?,?,?,?
+59602,wallashops.co.il,true,TLSv1.2,RSA, 2048 ,SHA256,false,false
+59603,thewire.com,true,TLSv1.2,RSA, 2048 ,SHA1,false,false
+59604,haiphp.com,false,?,?,?,?,?,?
+59605,hercity.com,false,?,?,?,?,?,?
+59606,pixelarity.com,true,TLSv1.2,RSA, 2048 ,SHA256,false,false
+59607,healthywomen.org,false,?,?,?,?,?,?
+59608,tv3play.se,true,TLSv1.2,RSA, 2048 ,SHA256,false,false
+59609,qlniu.com,false,?,?,?,?,?,?
+109300,deardoctor.com,true,TLSv1.2,RSA, 2048 ,SHA256,false,false
+109301,24img.com,false,?,?,?,?,?,?
+109302,cointrackers.com,true,TLSv1.2,RSA, 2048 ,SHA256,false,false
+109303,tri-cityherald.com,false,?,?,?,?,?,?
+109304,goodtips4life.com,false,?,?,?,?,?,?
+109305,zoomap.co.il,false,?,?,?,?,?,?
+109306,shearings.com,true,TLSv1,RSA, 2048 ,SHA1,false,false
+109307,goldirancs.ir,false,?,?,?,?,?,?
+109308,grif-fan.ru,true,TLSv1.2,EC, 256 ,SHA256,false,false
+109309,viviennewestwood.com,false,?,?,?,?,?,?
