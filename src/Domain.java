@@ -2,6 +2,7 @@
  * Created by michal on 10/7/2015.
  */
 public class Domain {
+
     //rank,domain,isHTTPS,SSLversion,key-type,key-size,signature-algorithm,isHSTS,isHSTSlong
     private int rank;
     private String domain;
@@ -17,12 +18,12 @@ public class Domain {
         this.rank = rank;
         this.domain = domain;
         this.isHSTS = "?";
-        this.SSLversion ="?";
-        this.keyType ="?";
-        this.keySize ="?";
-        this.signatureAlgorithm="?";
-        this.isHSTS="?";
-        this.isHSTSlong="?";
+        this.SSLversion = "?";
+        this.keyType = "?";
+        this.keySize = "?";
+        this.signatureAlgorithm = "?";
+        this.isHSTS = "?";
+        this.isHSTSlong = "?";
 
     }
 
@@ -99,7 +100,18 @@ public class Domain {
     }
 
 
-
-
-
+    @Override
+    public String toString() {
+        return "Domain{" +
+                "rank=" + rank +
+                ", domain='" + domain + '\'' +
+                ", isHTTPS=" + String.valueOf(isHTTPS) +
+                ", SSLversion='" + SSLversion + '\'' +
+                ", keyType='" + keyType + '\'' +
+                ", keySize='" + keySize + '\'' +
+                ", signatureAlgorithm='" + signatureAlgorithm + '\'' +
+                ", isHSTS='" + isHSTS + '\'' +
+                ", isHSTSlong='" + isHSTSlong + '\'' +
+                '}';
+    }
 }

@@ -1,83 +1,262 @@
-import com.sun.org.apache.xerces.internal.util.URI;
-
+import javax.net.ssl.*;
+import javax.security.cert.X509Certificate;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.SocketTimeoutException;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * Created by micha on 10/8/2015.
+ * Created by Michal Wozniak on 10/8/2015.
  */
 public class DomainDataParser {
 
-    public ArrayList<Domain> domains;
+    private ArrayList<Domain> domains;
 
     public DomainDataParser() {
-        domains = new ArrayList();
+
+        domains = new ArrayList<>();
     }
+//https://books.google.ca/books?id=G_hGOkywlhEC&pg=PT128&lpg=PT128&dq=detect+the+HTTP+header+SSL+socket+java&source=bl&ots=-luPSDBt-Q&sig=CHy0uEeTypgXzn7moy6nQeXX0rQ&hl=en&sa=X&ved=0CB4Q6AEwATgKahUKEwj84LaaurjIAhWKFT4KHdJqBj4#v=onepage&q=detect%20the%20HTTP%20header%20SSL%20socket%20java&f=false
 
-
-    public void get(String url){
+    /**
+     * connect to the current Domain and fetch the necessary information
+     *
+     * @param currentDomain
+     */
+    private void query(Domain currentDomain) {
 
         String USER_AGENT = "Mozilla/5.0";
         String ACCEPT_LANGUAGE = "en-US,en;q=0.5";
 
+        java.security.Security.setProperty("jdk.tls.disabledAlgorithms", "");
+        System.setProperty("https.protocols", "SSLv3,TLSv1,TLSv1.1,TLSv1.2");
+
+        //ssl port
+        int port = 443;
+        SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+
+        //error handling
+        boolean unknownHost = false;
+        boolean connectionTimedOut = false;
+
+
         try {
-            URL obj = new URL(url);
-            URLConnection con = obj.openConnection();
-            con.setRequestProperty("User-Agent", USER_AGENT);
-            con.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
-            con.setReadTimeout(3000);
+
+            SSLSocket socket = (SSLSocket) factory.createSocket(currentDomain.getDomain(), port);
+
+            //Re-enable deprecated
+            String[] suites = socket.getEnabledCipherSuites();
+            ArrayList<String> newSuitesList =
+                    new ArrayList<String>(Arrays.asList(suites));
+            newSuitesList.add("SSL_RSA_WITH_RC4_128_SHA");
+            newSuitesList.add("SSL_RSA_WITH_RC4_128_MD5");
+            String[] newSuitesArray = new String[newSuitesList.size()];
+            newSuitesArray = newSuitesList.toArray(newSuitesArray);
+            socket.setEnabledCipherSuites(newSuitesArray);
 
 
-            //Create new Domain objects
-            Domain domainData = new Domain(1, "gov");
+            socket.setSoTimeout(3000);
+            SSLSession sslSession = socket.getSession();
 
-            Map<String, List<String>> map = con.getHeaderFields();
-            if (!map.isEmpty()) {
 
-            /*for (Map.Entry<String, List<String>> header : con.getHeaderFields().entrySet()) {
-                System.out.println(header.getKey() + "=" + header.getValue());
-            }
-            */
+            if (sslSession.isValid()) {
+
+                // set all the attributes related to the ssl connection
+                setHTTPSInfo(sslSession, currentDomain);
+
+                //verify the Strict-Transport-Security header 
+                URL UrlConnection = new URL("https://www." + currentDomain.getDomain());
+                System.out.println("VALID: " + UrlConnection.toString());
+                URLConnection con = UrlConnection.openConnection();
+
+                con.setRequestProperty("User-Agent", USER_AGENT);
+                con.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
+
+                Map<String, List<String>> map = con.getHeaderFields();
 
                 List<String> strictTransportSecurity = map.get("Strict-Transport-Security");
-                if (strictTransportSecurity == null) {
-                    domainData.setIsHSTS("false");
-                    domainData.setIsHSTSlong("false");
-                    System.out.println("'Strict-Transport-Security ' not present in Header!");
+                verifyStrictTransportSecurity(strictTransportSecurity, currentDomain);
 
-                } else {
-                    for (String header : strictTransportSecurity) {
-                        domainData.setIsHSTS("true");
-                        domainData.setIsHSTSlong(String.valueOf(isHSTSlong(header)));
 
-                        System.out.println(header);
-                        System.out.println("isHSTS : " + domainData.getIsHSTS());
-                        System.out.println("isHSTSlong: " + isHSTSlong(header));
-                    }
-                }
             } else {
-                System.out.println("TIMEOUT");
-            }
-            //Create a new list of Domain objects
-            domains.add(domainData);
+                currentDomain.setIsHTTPS(false);
+                //domains.add(currentDomain);
 
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+            }
+        } catch (SSLHandshakeException sslHE) {
+            currentDomain.setIsHTTPS(false);
+        } catch (SocketTimeoutException ste) {
+            connectionTimedOut = true;
+            currentDomain.setIsHTTPS(false);
+        } catch (ConnectException ce) {
+
+            // determine if connection is refused or timed out
+            if (ce.getMessage().contains("Connection refused")) {
+                currentDomain.setIsHTTPS(false);
+                //domains.add(currentDomain);
+            } else {
+                connectionTimedOut = true;
+            }
+
+        } catch (UnknownHostException e) {
+            //unknown Host exception
+            unknownHost = true;
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            printSocketInfo(currentDomain, connectionTimedOut, unknownHost);
+            domains.add(currentDomain);
+
         }
 
     }
-    //using index
-    public void start(int index)
-    {
 
+    private void verifyStrictTransportSecurity(List<String> strictTransportSecurity, Domain currentDomain) {
+
+        if (strictTransportSecurity == null) {
+            currentDomain.setIsHSTS("false");
+            currentDomain.setIsHSTSlong("false");
+        } else {
+            for (String header : strictTransportSecurity) {
+                currentDomain.setIsHSTS("true");
+                currentDomain.setIsHSTSlong(String.valueOf(isHSTSlong(header)));
+
+            }
+        }
+    }
+
+
+    /**
+     * Debugging purpose : print all header field of a http connection
+     *
+     * @param connection
+     */
+    private void printHeaderFields(URLConnection connection) {
+        for (Map.Entry<String, List<String>> header : connection.getHeaderFields().entrySet()) {
+            System.out.println(header.getKey() + "=" + header.getValue());
+        }
+    }
+
+
+    /**
+     * set ssl related information about your connection
+     *
+     * @param sslSession
+     * @param domain     currentDomain
+     */
+    private void setHTTPSInfo(SSLSession sslSession, Domain domain) {
+
+        domain.setIsHTTPS(true);
+        domain.setSSLversion(sslSession.getProtocol());
+
+        domain.setSSLversion(sslSession.getProtocol());
+        X509Certificate[] certificates = new X509Certificate[0];
+        try {
+            certificates = sslSession.getPeerCertificateChain();
+        } catch (SSLPeerUnverifiedException e) {
+            e.printStackTrace();
+        }
+
+        domain.setKeyType(certificates[0].getPublicKey().getAlgorithm());
+
+        String certificateString = (String.valueOf(certificates[0].getPublicKey()));
+        domain.setKeySize(findKeySize(certificateString));
+
+        String signatureAlgorithm = certificates[0].getSigAlgName();
+        domain.setSignatureAlgorithm(convertSignatureAlgorithm(signatureAlgorithm));
+    }
+
+
+    /**
+     * Debugging method that print all the current domain inform
+     *
+     * @param existingDomain
+     * @param connectionTimedOut
+     * @param unknownHost
+     */
+    private void printSocketInfo(Domain existingDomain, boolean connectionTimedOut, boolean unknownHost) {
+        //rank,domain,isHTTPS,SSLversion,key-type,key-size,signature-algorithm,isHSTS,isHSTSlong
+
+        System.out.println("UNKNOWN_HOST: " + unknownHost);
+        System.out.println("TIMEOUT: " + connectionTimedOut);
+        System.out.println("Rank: " + existingDomain.getRank());
+        System.out.println("Domain :" + existingDomain.getDomain());
+        System.out.println("isHTTPS: " + existingDomain.isHTTPS()); // need to verfify this
+        System.out.println("SSLversion: " + existingDomain.getSSLversion()); // WORKING
+        System.out.println("Key-type: " + existingDomain.getKeyType());
+        System.out.println("Key-size: " + existingDomain.getKeySize());
+        System.out.println("signature-algorithm: " + existingDomain.getSignatureAlgorithm());
+        System.out.println("isHSTS: " + existingDomain.getIsHSTS());
+        System.out.println("isHSTSLong: " + existingDomain.getIsHSTSlong());
+        System.out.println("----------------------------------------");
+
+    }
+
+    private String convertSignatureAlgorithm(String algorithm) {
+
+        //http://docs.oracle.com/javase/7/docs/technotes/guides/security/StandardNames.html#Signature
+        switch (algorithm) {
+            case "SHA256withRSA":
+                return "SHA256";
+            case "SHA1withRSA":
+                return "SHA1";
+            case "SHA1withDSA":
+                return "SHA1";
+            case "SHA1withECDSA":
+                return "SHA1";
+            case "SHA256withDSA":
+                return "SHA256";
+            case "SHA2withECDSA":
+                return "SHA2";
+            case "SHA2withRSA":
+                return "SHA2";
+            case "MD2withRSA":
+                return "MD2";
+            case "MD5withRSA":
+                return "MD5";
+            case "SHA384withRSA":
+                return "SHA384";
+            case "SHA512withRSA":
+                return "SHA512";
+            case "SHA256withECDSA":
+                return "SHA256";
+            case "SHA384withECDSA":
+                return "SHA384";
+            case "SHA512withECDSA":
+                return "SHA512";
+        }
+        return null;
+    }
+
+    /**
+     * parse the certificate to get the key size
+     *
+     * @param certificate
+     * @return key size string
+     */
+    private String findKeySize(String certificate) {
+        Pattern pattern = Pattern.compile(",(.+?)bits");
+        Matcher matcher = pattern.matcher(certificate);
+        matcher.find();
+        return matcher.group(1);
+    }
+
+
+    /**
+     * check if HSTS is longer than one month
+     *
+     * @param input
+     * @return true/false
+     */
+    private boolean isHSTSlong(String input) {
+        //System.out.println(input);
+        String number = input.replaceAll("[^0-9]", "");
+        int maxAge = Integer.parseInt(number);
+        return maxAge >= 2629744;
     }
 
 
@@ -85,8 +264,15 @@ public class DomainDataParser {
         return domains;
     }
 
-    private static boolean isHSTSlong(String input) {
-        int maxAge = Integer.parseInt(input.substring(8));
-        return maxAge < 2629744;
+    /**
+     * query the list of domains
+     *
+     * @param list list of domains
+     */
+    public void queryDomains(ArrayList<Domain> list) {
+
+        for (Domain domain : list) {
+            query(domain);
+        }
     }
 }
