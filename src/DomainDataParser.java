@@ -53,7 +53,7 @@ public class DomainDataParser {
         boolean connectionTimedOut = false;
 
         //set timeout
-        int timeOut = 500;
+        int timeOut = 2000;
 
 
         try {
@@ -335,8 +335,11 @@ public class DomainDataParser {
      */
     public void queryDomains(ArrayList<Domain> list) {
 
+        int domain_id =1;
         for (Domain domain : list) {
+            System.out.println("domain # :" +domain_id);
             query(domain);
+            domain_id++;
         }
     }
 }
