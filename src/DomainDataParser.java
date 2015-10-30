@@ -20,7 +20,7 @@ public class DomainDataParser {
 
         domains = new ArrayList<>();
     }
-//https://books.google.ca/books?id=G_hGOkywlhEC&pg=PT128&lpg=PT128&dq=detect+the+HTTP+header+SSL+socket+java&source=bl&ots=-luPSDBt-Q&sig=CHy0uEeTypgXzn7moy6nQeXX0rQ&hl=en&sa=X&ved=0CB4Q6AEwATgKahUKEwj84LaaurjIAhWKFT4KHdJqBj4#v=onepage&q=detect%20the%20HTTP%20header%20SSL%20socket%20java&f=false
+    //https://books.google.ca/books?id=G_hGOkywlhEC&pg=PT128&lpg=PT128&dq=detect+the+HTTP+header+SSL+socket+java&source=bl&ots=-luPSDBt-Q&sig=CHy0uEeTypgXzn7moy6nQeXX0rQ&hl=en&sa=X&ved=0CB4Q6AEwATgKahUKEwj84LaaurjIAhWKFT4KHdJqBj4#v=onepage&q=detect%20the%20HTTP%20header%20SSL%20socket%20java&f=false
 
     /**
      * connect to the current Domain and fetch the necessary information
@@ -62,30 +62,17 @@ public class DomainDataParser {
             socket.setSoTimeout(3000);
             SSLSession sslSession = socket.getSession();
 
-
             if (sslSession.isValid()) {
 
                 // set all the attributes related to the ssl connection
                 setHTTPSInfo(sslSession, currentDomain);
 
-                //verify the Strict-Transport-Security header 
-                URL UrlConnection = new URL("https://www." + currentDomain.getDomain());
-                System.out.println("VALID: " + UrlConnection.toString());
-                URLConnection con = UrlConnection.openConnection();
-
-                con.setRequestProperty("User-Agent", USER_AGENT);
-                con.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
-
-                Map<String, List<String>> map = con.getHeaderFields();
-
-                List<String> strictTransportSecurity = map.get("Strict-Transport-Security");
-                verifyStrictTransportSecurity(strictTransportSecurity, currentDomain);
+                //verify the Strict-Transport-Security header
+                verifyStrictTransportSecurity(currentDomain, USER_AGENT, ACCEPT_LANGUAGE);
 
 
             } else {
                 currentDomain.setIsHTTPS(false);
-                //domains.add(currentDomain);
-
             }
         } catch (SSLHandshakeException sslHE) {
             currentDomain.setIsHTTPS(false);
@@ -97,7 +84,6 @@ public class DomainDataParser {
             // determine if connection is refused or timed out
             if (ce.getMessage().contains("Connection refused")) {
                 currentDomain.setIsHTTPS(false);
-                //domains.add(currentDomain);
             } else {
                 connectionTimedOut = true;
             }
@@ -115,17 +101,42 @@ public class DomainDataParser {
 
     }
 
-    private void verifyStrictTransportSecurity(List<String> strictTransportSecurity, Domain currentDomain) {
+    /**
+     * verify if the domain use the http header field StrictTransportSecurity
+     * set the currentDomain related parameter
+     * @param currentDomain current domain used
+     * @param USER_AGENT use fake user agent
+     * @param ACCEPT_LANGUAGE
+     */
+    private void verifyStrictTransportSecurity(Domain currentDomain, String USER_AGENT, String ACCEPT_LANGUAGE) {
 
-        if (strictTransportSecurity == null) {
-            currentDomain.setIsHSTS("false");
-            currentDomain.setIsHSTSlong("false");
-        } else {
-            for (String header : strictTransportSecurity) {
-                currentDomain.setIsHSTS("true");
-                currentDomain.setIsHSTSlong(String.valueOf(isHSTSlong(header)));
+        URL UrlConnection;
+        URLConnection con;
+        Map<String, List<String>> map;
 
+        try {
+            UrlConnection = new URL("https://www." + currentDomain.getDomain());
+            System.out.println("VALID: " + UrlConnection.toString());
+
+            con = UrlConnection.openConnection();
+            con.setRequestProperty("User-Agent", USER_AGENT);
+            con.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
+
+            map = con.getHeaderFields();
+            List<String> strictTransportSecurity = map.get("Strict-Transport-Security");
+
+            if (strictTransportSecurity == null) {
+                currentDomain.setIsHSTS("false");
+                currentDomain.setIsHSTSlong("false");
+            } else {
+                for (String header : strictTransportSecurity) {
+                    currentDomain.setIsHSTS("true");
+                    currentDomain.setIsHSTSlong(String.valueOf(isHSTSlong(header)));
+
+                }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

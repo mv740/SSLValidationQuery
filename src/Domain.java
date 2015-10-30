@@ -17,7 +17,7 @@ public class Domain {
     public Domain(int rank, String domain) {
         this.rank = rank;
         this.domain = domain;
-        this.isHSTS = "?";
+        this.isHTTPS = false;
         this.SSLversion = "?";
         this.keyType = "?";
         this.keySize = "?";
