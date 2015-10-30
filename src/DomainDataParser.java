@@ -10,7 +10,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Created by Michal Wozniak on 10/8/2015.
+ * @author michal wozniak id 21941097
+ * @author sebastian proctor-shah id 29649727
+ *
+ * Date Created on 10/7/2015
+ *
+ * DomainDataParser
+ *
+ * query a website using https connection (SSL) and fetch information about the certificate, key size, algorithm used...
+ *
  */
 public class DomainDataParser {
 
@@ -37,16 +45,25 @@ public class DomainDataParser {
 
         //ssl port
         int port = 443;
-        SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+        //SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+
 
         //error handling
         boolean unknownHost = false;
         boolean connectionTimedOut = false;
 
+        //set timeout
+        int timeOut = 500;
+
 
         try {
 
-            SSLSocket socket = (SSLSocket) factory.createSocket(currentDomain.getDomain(), port);
+            //SSLSocket socket = (SSLSocket) factory.createSocket(currentDomain.getDomain(), port);
+
+            // if connection take more than 3 second, stop it
+            SSLSocket socket = (SSLSocket)SSLSocketFactory.getDefault().createSocket();
+            socket.connect(new InetSocketAddress(currentDomain.getDomain(),port),timeOut);
+            //socket.startHandshake();
 
             //Re-enable deprecated
             String[] suites = socket.getEnabledCipherSuites();
@@ -59,10 +76,12 @@ public class DomainDataParser {
             socket.setEnabledCipherSuites(newSuitesArray);
 
 
-            socket.setSoTimeout(3000);
-            SSLSession sslSession = socket.getSession();
+            //socket.setSoTimeout(3000);
+            SSLSession sslSession = socket.getSession(); // does the startHandshake()
 
             if (sslSession.isValid()) {
+
+
 
                 // set all the attributes related to the ssl connection
                 setHTTPSInfo(sslSession, currentDomain);
@@ -72,18 +91,26 @@ public class DomainDataParser {
 
 
             } else {
-                currentDomain.setIsHTTPS(false);
+                currentDomain.setIsHTTPS("false");
             }
         } catch (SSLHandshakeException sslHE) {
-            currentDomain.setIsHTTPS(false);
+            currentDomain.setIsHTTPS("false");
+
         } catch (SocketTimeoutException ste) {
             connectionTimedOut = true;
-            currentDomain.setIsHTTPS(false);
+            currentDomain.setIsHTTPS("timeout");
+            currentDomain.setSSLversion("timeout");
+            currentDomain.setKeyType("timeout");
+            currentDomain.setKeySize("timeout");
+            currentDomain.setSignatureAlgorithm("timeout");
+            currentDomain.setIsHSTS("timeout");
+            currentDomain.setIsHSTSlong("timeout");
+
         } catch (ConnectException ce) {
 
             // determine if connection is refused or timed out
             if (ce.getMessage().contains("Connection refused")) {
-                currentDomain.setIsHTTPS(false);
+                currentDomain.setIsHTTPS("false");
             } else {
                 connectionTimedOut = true;
             }
@@ -91,6 +118,14 @@ public class DomainDataParser {
         } catch (UnknownHostException e) {
             //unknown Host exception
             unknownHost = true;
+            currentDomain.setIsHTTPS("unknownHost");
+            currentDomain.setSSLversion("unknownHost");
+            currentDomain.setKeyType("unknownHost");
+            currentDomain.setKeySize("unknownHost");
+            currentDomain.setSignatureAlgorithm("unknownHost");
+            currentDomain.setIsHSTS("unknownHost");
+            currentDomain.setIsHSTSlong("unknownHost");
+
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -115,7 +150,7 @@ public class DomainDataParser {
         Map<String, List<String>> map;
 
         try {
-            UrlConnection = new URL("https://www." + currentDomain.getDomain());
+            UrlConnection = new URL("https://" + currentDomain.getDomain());
             System.out.println("VALID: " + UrlConnection.toString());
 
             con = UrlConnection.openConnection();
@@ -123,18 +158,29 @@ public class DomainDataParser {
             con.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
 
             map = con.getHeaderFields();
-            List<String> strictTransportSecurity = map.get("Strict-Transport-Security");
+            //check if we get the header
+            if(map.size()>0)
+            {
+                List<String> strictTransportSecurity = map.get("Strict-Transport-Security");
 
-            if (strictTransportSecurity == null) {
-                currentDomain.setIsHSTS("false");
-                currentDomain.setIsHSTSlong("false");
-            } else {
-                for (String header : strictTransportSecurity) {
-                    currentDomain.setIsHSTS("true");
-                    currentDomain.setIsHSTSlong(String.valueOf(isHSTSlong(header)));
+                //check if f
+                if (strictTransportSecurity == null) {
+                    currentDomain.setIsHSTS("false");
+                    currentDomain.setIsHSTSlong("false");
+                } else {
+                    for (String header : strictTransportSecurity) {
+                        currentDomain.setIsHSTS("true");
+                        currentDomain.setIsHSTSlong(String.valueOf(isHSTSlong(header)));
 
+                    }
                 }
             }
+            else
+            {
+                currentDomain.setIsHSTS("?");
+                currentDomain.setIsHSTSlong("?");
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -161,7 +207,7 @@ public class DomainDataParser {
      */
     private void setHTTPSInfo(SSLSession sslSession, Domain domain) {
 
-        domain.setIsHTTPS(true);
+        domain.setIsHTTPS("true");
         domain.setSSLversion(sslSession.getProtocol());
 
         domain.setSSLversion(sslSession.getProtocol());
@@ -196,8 +242,8 @@ public class DomainDataParser {
         System.out.println("TIMEOUT: " + connectionTimedOut);
         System.out.println("Rank: " + existingDomain.getRank());
         System.out.println("Domain :" + existingDomain.getDomain());
-        System.out.println("isHTTPS: " + existingDomain.isHTTPS()); // need to verfify this
-        System.out.println("SSLversion: " + existingDomain.getSSLversion()); // WORKING
+        System.out.println("isHTTPS: " + existingDomain.isHTTPS());
+        System.out.println("SSLversion: " + existingDomain.getSSLversion());
         System.out.println("Key-type: " + existingDomain.getKeyType());
         System.out.println("Key-size: " + existingDomain.getKeySize());
         System.out.println("signature-algorithm: " + existingDomain.getSignatureAlgorithm());
@@ -211,6 +257,7 @@ public class DomainDataParser {
 
         //http://docs.oracle.com/javase/7/docs/technotes/guides/security/StandardNames.html#Signature
         switch (algorithm) {
+            //"SSL_RSA_WITH_RC4_128_SHA
             case "SHA256withRSA":
                 return "SHA256";
             case "SHA1withRSA":
@@ -239,6 +286,12 @@ public class DomainDataParser {
                 return "SHA384";
             case "SHA512withECDSA":
                 return "SHA512";
+            case "SHA128withRC4":
+                return "RC4";
+            case "MD5withRC4":
+                return "RC4";
+            //newSuitesList.add("SSL_RSA_WITH_RC4_128_SHA");
+            //newSuitesList.add("SSL_RSA_WITH_RC4_128_MD5");
         }
         return null;
     }

@@ -1,12 +1,16 @@
 /**
- * Created by michal on 10/7/2015.
+ * @author Michal Wozniak id 21941097
+ * @author sebastian proctor-shah id 29649727
+ *
+ * Date Created  on 10/7/2015.
+ *
  */
 public class Domain {
 
     //rank,domain,isHTTPS,SSLversion,key-type,key-size,signature-algorithm,isHSTS,isHSTSlong
     private int rank;
     private String domain;
-    private boolean isHTTPS;
+    private String isHTTPS;
     private String SSLversion;
     private String keyType;
     private String keySize;
@@ -17,7 +21,7 @@ public class Domain {
     public Domain(int rank, String domain) {
         this.rank = rank;
         this.domain = domain;
-        this.isHTTPS = false;
+        this.isHTTPS = "?";
         this.SSLversion = "?";
         this.keyType = "?";
         this.keySize = "?";
@@ -43,11 +47,11 @@ public class Domain {
         this.domain = domain;
     }
 
-    public boolean isHTTPS() {
+    public String isHTTPS() {
         return isHTTPS;
     }
 
-    public void setIsHTTPS(boolean isHTTPS) {
+    public void setIsHTTPS(String isHTTPS) {
         this.isHTTPS = isHTTPS;
     }
 
@@ -105,7 +109,7 @@ public class Domain {
         return "Domain{" +
                 "rank=" + rank +
                 ", domain='" + domain + '\'' +
-                ", isHTTPS=" + String.valueOf(isHTTPS) +
+                ", isHTTPS=" + isHTTPS +
                 ", SSLversion='" + SSLversion + '\'' +
                 ", keyType='" + keyType + '\'' +
                 ", keySize='" + keySize + '\'' +

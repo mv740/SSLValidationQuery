@@ -8,8 +8,16 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
 /**
- * Created by michal wozniak on 10/7/2015.
+ * @author Michal Wozniak id 21941097
+ * @author sebastian proctor-shah id 29649727
+ *
+ * Date Created  on 10/7/2015.
+ *
  * based on http://examples.javacodegeeks.com/core-java/writeread-csv-files-in-java-example/
+ *
+ * CSV
+ *
+ * permit to read cvs file and create them
  */
 public class CSV {
 
@@ -50,7 +58,7 @@ public class CSV {
                 fileWriter.append(COMMA_DELIMITER);
                 fileWriter.append(domain.getDomain());
                 fileWriter.append(COMMA_DELIMITER);
-                fileWriter.append(String.valueOf(domain.isHTTPS()));
+                fileWriter.append(domain.isHTTPS());
                 fileWriter.append(COMMA_DELIMITER);
                 fileWriter.append(domain.getSSLversion());
                 fileWriter.append(COMMA_DELIMITER);
