@@ -12,6 +12,7 @@ import java.util.ArrayList;
  * @author sebastian proctor-shah id 29649727
  *
  * Date Created  on 10/7/2015.
+ * Date Updated : 10/30/2015
  *
  * based on http://examples.javacodegeeks.com/core-java/writeread-csv-files-in-java-example/
  *
@@ -131,8 +132,15 @@ public class CSV {
     }
 
 
-    //for testing small index
-    public ArrayList<Domain> readDomainFile(String fileName, int startIndex) {
+    /**
+     * for testing read function
+     *  read only 10 row
+     *
+     * @param fileName file to read
+     * @param startIndex which row to start reading
+     * @return domain list of the selected row
+     */
+    public ArrayList<Domain> readDomainFileTest(String fileName, int startIndex) {
 
         int stopIndex = startIndex + 10;
         BufferedReader fileReader = null;
@@ -156,7 +164,7 @@ public class CSV {
                 //Get all tokens available in line
                 String[] tokens = line.split(COMMA_DELIMITER);
                 if (tokens.length > 0) {
-                    //Create a new student object and fill his  data
+                    //Create a new domain object and fill his  data
                     if (Integer.parseInt(tokens[RANK_ID]) >= startIndex || Integer.parseInt(tokens[RANK_ID]) < stopIndex) {
                         Domain newDomain = new Domain(Integer.parseInt(tokens[RANK_ID]), tokens[DOMAIN_URL]);
                         domainList.add(newDomain);
@@ -165,7 +173,7 @@ public class CSV {
                 }
             }
 
-            //Print the new student list
+            //Print the new domain list
             for (Domain domain : domainList) {
                 System.out.println(domain.toString());
             }
