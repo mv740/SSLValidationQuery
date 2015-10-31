@@ -130,6 +130,7 @@ public class DomainDataParser {
             e.printStackTrace();
         } finally {
             printSocketInfo(currentDomain, connectionTimedOut, unknownHost);
+            CSV.writeToFile("michal.csv", currentDomain);
             domains.add(currentDomain);
 
         }

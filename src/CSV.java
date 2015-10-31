@@ -32,6 +32,98 @@ public class CSV {
     private static final int RANK_ID = 0;
     private static final int DOMAIN_URL = 1;
 
+
+
+    public static void create(String fileName){
+
+
+        FileWriter fileWriter = null;
+
+        try {
+            fileWriter = new FileWriter(fileName);
+
+            //Write the CSV file header
+            fileWriter.append(FILE_HEADER);
+
+            //Add a new line separator after the header
+            fileWriter.append(NEW_LINE_SEPARATOR);
+
+            System.out.println("CSV file was created successfully !!!");
+
+        } catch (Exception e) {
+            System.out.println("Error in CsvFileWriter !!!");
+            e.printStackTrace();
+        } finally {
+
+            try {
+                if (fileWriter != null) {
+                    fileWriter.flush();
+                }
+                if (fileWriter != null) {
+                    fileWriter.close();
+                }
+            } catch (IOException e) {
+                System.out.println("Error while flushing/closing fileWriter !!!");
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+    public static void writeToFile(String fileName, Domain domain)
+    {
+
+        //Write a new domain object list to the CSV file
+
+
+        FileWriter fileWriter = null;
+
+        try {
+            fileWriter = new FileWriter(fileName, true);
+
+            //rank,domain,isHTTPS,SSLversion,key-type,key-size,signature-algorithm,isHSTS,isHSTSlong
+            fileWriter.append(String.valueOf(domain.getRank()));
+            fileWriter.append(COMMA_DELIMITER);
+            fileWriter.append(domain.getDomain());
+            fileWriter.append(COMMA_DELIMITER);
+            fileWriter.append(domain.isHTTPS());
+            fileWriter.append(COMMA_DELIMITER);
+            fileWriter.append(domain.getSSLversion());
+            fileWriter.append(COMMA_DELIMITER);
+            fileWriter.append(domain.getKeyType());
+            fileWriter.append(COMMA_DELIMITER);
+            fileWriter.append(domain.getKeySize());
+            fileWriter.append(COMMA_DELIMITER);
+            fileWriter.append(domain.getSignatureAlgorithm());
+            fileWriter.append(COMMA_DELIMITER);
+            fileWriter.append(domain.getIsHSTS());
+            fileWriter.append(COMMA_DELIMITER);
+            fileWriter.append(domain.getIsHSTSlong());
+            fileWriter.append(NEW_LINE_SEPARATOR);
+
+        } catch (Exception e) {
+            System.out.println("Error in CsvFileWriter !!!");
+            e.printStackTrace();
+        } finally {
+
+            try {
+                if (fileWriter != null) {
+                    fileWriter.flush();
+                }
+                if (fileWriter != null) {
+                    fileWriter.close();
+                }
+            } catch (IOException e) {
+                System.out.println("Error while flushing/closing fileWriter !!!");
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+
+
+
     /**
      *  write every domain's information from the list in a csv file
      * @param fileName output filename

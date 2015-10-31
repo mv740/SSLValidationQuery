@@ -19,6 +19,7 @@ public class Driver {
 
     public static void main(String[] args)  {
 
+        CSV.create("michal.csv");
 
         ArrayList<Domain> csvList = CSV.readFileCustomIndex("top-1m.csv", 21941097,29649727);
         DomainDataParser parser = new DomainDataParser();
