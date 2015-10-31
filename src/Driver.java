@@ -19,8 +19,6 @@ import java.util.ArrayList;
 public class Driver {
 
     public static void main(String[] args)  {
-
-
         String filename = "FinalWebParsing.csv";
 
         CSV.createFile(filename);
@@ -28,7 +26,6 @@ public class Driver {
         ArrayList<Domain> csvList = CSV.readFileCustomIndex("top-1m.csv", 21941097,29649727);
         DomainDataParser parser = new DomainDataParser(filename);
         parser.queryDomains(csvList);
-
 
 
     }

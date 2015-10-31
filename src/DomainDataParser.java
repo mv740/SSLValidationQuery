@@ -135,6 +135,7 @@ public class DomainDataParser {
             CSV.writeToFile(this.fileName, currentDomain);
 
 
+
         }
 
     }
