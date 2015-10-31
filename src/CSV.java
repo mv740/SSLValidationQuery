@@ -198,12 +198,15 @@ public class CSV {
 
     /**
      * read the csv file and get only the information required by the studentID
+     * for debugging purpose only
+     * eg: howmany = 10; will get only 10 domains
      *
      * @param fileName  cvs input file
      * @param studentId student id
+     * @param HowMany the number of domains you want to get
      * @return list of required domains
      */
-    public static ArrayList<Domain> readFile(String fileName, int studentId) {
+    public static ArrayList<Domain> readFileStudentTest(String fileName, int studentId, int HowMany) {
 
 
         int startIndex = 0;
@@ -212,7 +215,7 @@ public class CSV {
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-        int stopIndex = startIndex + 10;
+        int stopIndex = startIndex + HowMany;
         BufferedReader fileReader = null;
 
         //Create a new list of Domain to be filled by CSV file data
