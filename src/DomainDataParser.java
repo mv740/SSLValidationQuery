@@ -22,11 +22,11 @@ import java.util.regex.Pattern;
  */
 public class DomainDataParser {
 
-    private ArrayList<Domain> domains;
+    private String fileName;
 
-    public DomainDataParser() {
+    public DomainDataParser(String filename) {
 
-        domains = new ArrayList<>();
+        this.fileName = filename;
     }
     //https://books.google.ca/books?id=G_hGOkywlhEC&pg=PT128&lpg=PT128&dq=detect+the+HTTP+header+SSL+socket+java&source=bl&ots=-luPSDBt-Q&sig=CHy0uEeTypgXzn7moy6nQeXX0rQ&hl=en&sa=X&ved=0CB4Q6AEwATgKahUKEwj84LaaurjIAhWKFT4KHdJqBj4#v=onepage&q=detect%20the%20HTTP%20header%20SSL%20socket%20java&f=false
 
@@ -106,15 +106,6 @@ public class DomainDataParser {
             currentDomain.setIsHSTS("timeout");
             currentDomain.setIsHSTSlong("timeout");
 
-        } catch (ConnectException ce) {
-
-            // determine if connection is refused or timed out
-            if (ce.getMessage().contains("Connection refused")) {
-                currentDomain.setIsHTTPS("false");
-            } else {
-                connectionTimedOut = true;
-            }
-
         } catch (UnknownHostException e) {
             //unknown Host exception
             unknownHost = true;
@@ -126,11 +117,23 @@ public class DomainDataParser {
             currentDomain.setIsHSTS("unknownHost");
             currentDomain.setIsHSTSlong("unknownHost");
 
-        } catch (IOException e) {
+        }catch (ConnectException ce) {
+
+            // determine if connection is refused or timed out
+            if (ce.getMessage().contains("Connection refused")) {
+                currentDomain.setIsHTTPS("false");
+            } else {
+                connectionTimedOut = true;
+            }
+
+        }  catch (Exception e) {
             e.printStackTrace();
         } finally {
-            printSocketInfo(currentDomain, connectionTimedOut, unknownHost);
-            domains.add(currentDomain);
+            //for debugging
+            //printSocketInfo(currentDomain, connectionTimedOut, unknownHost);
+
+            CSV.writeToFile(this.fileName, currentDomain);
+
 
         }
 
@@ -151,9 +154,10 @@ public class DomainDataParser {
 
         try {
             UrlConnection = new URL("https://" + currentDomain.getDomain());
-            System.out.println("VALID: " + UrlConnection.toString());
+            //System.out.println("VALID: " + UrlConnection.toString());
 
             con = UrlConnection.openConnection();
+            con.setConnectTimeout(2000);
             con.setRequestProperty("User-Agent", USER_AGENT);
             con.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
 
@@ -180,6 +184,10 @@ public class DomainDataParser {
                 currentDomain.setIsHSTS("?");
                 currentDomain.setIsHSTSlong("?");
             }
+        }catch (SocketTimeoutException e)
+        {
+            currentDomain.setIsHSTS("?");
+            currentDomain.setIsHSTSlong("?");
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -324,9 +332,6 @@ public class DomainDataParser {
     }
 
 
-    public ArrayList<Domain> getDomains() {
-        return domains;
-    }
 
     /**
      * query the list of domains
@@ -341,5 +346,6 @@ public class DomainDataParser {
             query(domain);
             domain_id++;
         }
+        System.out.println("Parsing complete, all domains were added to the csv file");
     }
 }

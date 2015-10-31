@@ -9,9 +9,10 @@ import java.util.ArrayList;
  *
  * HTTPS ANALYSER
  *
+ * 1- create csv file
  * 1- Connect to multiple website and determine if HTTPS is supported
  * 2- if it is then you will parse the ssl session and determine which ssl, certificate key, algorithim they use
- * 3- write the list of domains that were queried into a cvs file
+ * 3-  every time a domain information has been set, write it to the cvs file
  */
 
 
@@ -20,11 +21,14 @@ public class Driver {
     public static void main(String[] args)  {
 
 
+        String filename = "FinalWebParsing.csv";
+
+        CSV.createFile(filename);
+
         ArrayList<Domain> csvList = CSV.readFileCustomIndex("top-1m.csv", 21941097,29649727);
-        DomainDataParser parser = new DomainDataParser();
+        DomainDataParser parser = new DomainDataParser(filename);
         parser.queryDomains(csvList);
-        ArrayList<Domain> domains = parser.getDomains();
-        CSV.writeCSV("test2.csv", domains);
+
 
 
     }
