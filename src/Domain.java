@@ -3,9 +3,9 @@
  * @author sebastian proctor-shah id 29649727
  *
  * Date Created  on 10/7/2015.
- *
+ * Date Updated : 11/01/2015
  */
-public class Domain {
+public class Domain implements Comparable<Domain> {
 
     //rank,domain,isHTTPS,SSLversion,key-type,key-size,signature-algorithm,isHSTS,isHSTSlong
     private int rank;
@@ -117,5 +117,12 @@ public class Domain {
                 ", isHSTS='" + isHSTS + '\'' +
                 ", isHSTSlong='" + isHSTSlong + '\'' +
                 '}';
+    }
+
+
+    @Override
+    public int compareTo(Domain domain) {
+        int compareRank =domain.getRank();
+        return this.rank - compareRank;
     }
 }

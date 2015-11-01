@@ -1,12 +1,16 @@
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.*;
 
 /**
  * @author Michal Wozniak id 21941097
  * @author sebastian proctor-shah id 29649727
  *
  * Date Created on 10/7/2015
- * Date Updated : 10/30/2015
+ * Date Updated : 11/01/2015
  *
  * HTTPS ANALYSER
  *
@@ -16,17 +20,21 @@ import java.util.ArrayList;
  * 3-  every time a domain information has been set, write it to the cvs file
  */
 
-
 public class Driver {
 
     public static void main(String[] args)  {
-        String filename = "FinalWebParsing.csv";
 
-        CSV.createFile(filename);
+        String filename = "test.csv";
+
+
 
         ArrayList<Domain> csvList = CSV.readFileCustomIndex("top-1m.csv", 21941097,29649727);
-        DomainDataParser parser = new DomainDataParser(filename);
-        parser.queryDomains(csvList);
+        //ArrayList<Domain> csvList = CSV.readFileStudentTest("top-1m.csv", 21941097, 1000);
+        System.out.println(csvList.size());
+
+        //create thread pool, each worker query one domain, get List of result, sort them and write them to file
+        MultiThreadQueryProcess.getInstance().start(csvList, filename);
+
 
 
     }

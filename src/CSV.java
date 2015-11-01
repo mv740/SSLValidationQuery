@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Michal Wozniak id 21941097
@@ -130,6 +131,66 @@ public class CSV {
 
         }
     }
+
+    /**
+     *
+     * Write domain's information to the specified file
+     *  @param fileName name of the csv file
+     * @param domains List of domains
+     */
+    public static void writeToFile(String fileName, List<Domain> domains) {
+
+        //Write a new domain object list to the CSV file
+
+
+        FileWriter fileWriter = null;
+
+        try {
+            fileWriter = new FileWriter(fileName, true);
+
+            for (Domain domain : domains)
+            {
+                //rank,domain,isHTTPS,SSLversion,key-type,key-size,signature-algorithm,isHSTS,isHSTSlong
+                fileWriter.append(String.valueOf(domain.getRank()));
+                fileWriter.append(COMMA_DELIMITER);
+                fileWriter.append(domain.getDomain());
+                fileWriter.append(COMMA_DELIMITER);
+                fileWriter.append(domain.isHTTPS());
+                fileWriter.append(COMMA_DELIMITER);
+                fileWriter.append(domain.getSSLversion());
+                fileWriter.append(COMMA_DELIMITER);
+                fileWriter.append(domain.getKeyType());
+                fileWriter.append(COMMA_DELIMITER);
+                fileWriter.append(domain.getKeySize());
+                fileWriter.append(COMMA_DELIMITER);
+                fileWriter.append(domain.getSignatureAlgorithm());
+                fileWriter.append(COMMA_DELIMITER);
+                fileWriter.append(domain.getIsHSTS());
+                fileWriter.append(COMMA_DELIMITER);
+                fileWriter.append(domain.getIsHSTSlong());
+                fileWriter.append(NEW_LINE_SEPARATOR);
+            }
+
+        } catch (Exception e) {
+            System.out.println("Error in CsvFileWriter !!!");
+            e.printStackTrace();
+        } finally {
+
+            try {
+                if (fileWriter != null) {
+                    fileWriter.flush();
+                }
+                if (fileWriter != null) {
+                    fileWriter.close();
+                }
+            } catch (IOException e) {
+                System.out.println("Error while flushing/closing fileWriter !!!");
+                e.printStackTrace();
+            }
+
+        }
+    }
+
 
 
     /**
@@ -343,4 +404,6 @@ public class CSV {
 
         return domainList;
     }
+
+
 }

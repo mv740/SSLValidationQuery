@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
  * @author sebastian proctor-shah id 29649727
  *
  * Date Created on 10/7/2015
+ * Date Updated : 11/01/2015
  *
  * DomainDataParser
  *
@@ -23,10 +24,12 @@ import java.util.regex.Pattern;
 public class DomainDataParser {
 
     private String fileName;
+    private ArrayList<Domain> DomainList;
 
     public DomainDataParser(String filename) {
 
         this.fileName = filename;
+        this.DomainList = new ArrayList<>();
     }
     //https://books.google.ca/books?id=G_hGOkywlhEC&pg=PT128&lpg=PT128&dq=detect+the+HTTP+header+SSL+socket+java&source=bl&ots=-luPSDBt-Q&sig=CHy0uEeTypgXzn7moy6nQeXX0rQ&hl=en&sa=X&ved=0CB4Q6AEwATgKahUKEwj84LaaurjIAhWKFT4KHdJqBj4#v=onepage&q=detect%20the%20HTTP%20header%20SSL%20socket%20java&f=false
 
@@ -35,7 +38,7 @@ public class DomainDataParser {
      *
      * @param currentDomain
      */
-    private void query(Domain currentDomain) {
+    private Domain query(Domain currentDomain) {
 
         String USER_AGENT = "Mozilla/5.0";
         String ACCEPT_LANGUAGE = "en-US,en;q=0.5";
@@ -132,12 +135,19 @@ public class DomainDataParser {
             //for debugging
             //printSocketInfo(currentDomain, connectionTimedOut, unknownHost);
 
-            CSV.writeToFile(this.fileName, currentDomain);
+            //CSV.writeToFile(this.fileName, currentDomain);
+            //DomainList.add(currentDomain);
+             return currentDomain;
 
 
 
         }
 
+    }
+
+    public ArrayList<Domain> getDomainList()
+    {
+        return DomainList;
     }
 
     /**
@@ -339,7 +349,7 @@ public class DomainDataParser {
      *
      * @param list list of domains
      */
-    public void queryDomains(ArrayList<Domain> list) {
+    public void queryDomains(List<Domain> list) {
 
         int domain_id =1;
         for (Domain domain : list) {
@@ -348,5 +358,10 @@ public class DomainDataParser {
             domain_id++;
         }
         System.out.println("Parsing complete, all domains were added to the csv file");
+    }
+
+    public Domain queryOneDomain(Domain domain)
+    {
+        return query(domain);
     }
 }
