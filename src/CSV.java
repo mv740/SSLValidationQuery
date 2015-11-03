@@ -211,7 +211,6 @@ public class CSV {
 
         try {
 
-
             String line = "";
 
             //Create the file reader
@@ -276,7 +275,6 @@ public class CSV {
      * @return list of required domains
      */
     public static ArrayList<Domain> readFileStudentTest(String fileName, int studentId, int HowMany) {
-
 
         int startIndex = 0;
         try {
@@ -404,6 +402,4 @@ public class CSV {
 
         return domainList;
     }
-
-
 }

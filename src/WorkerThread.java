@@ -1,19 +1,20 @@
 import java.util.concurrent.Callable;
 
 /**
- * Created by micha on 11/1/2015.
+ * Created by michal on 11/1/2015.
+ *
+ * Worker thread
+ *
+ *  execute one domain query and return the data
  */
 public class WorkerThread implements Callable<Domain> {
     private Domain domain;
-    private String filename;
-    public WorkerThread(Domain domain, String fileName){
+    public WorkerThread(Domain domain){
         this.domain = domain;
-        this.filename = fileName;
     }
 
     @Override
     public Domain call() throws Exception {
-        DomainDataParser parser = new DomainDataParser(filename);
-        return parser.queryOneDomain(this.domain);
+        return DomainDataParser.queryOneDomain(this.domain);
     }
 }

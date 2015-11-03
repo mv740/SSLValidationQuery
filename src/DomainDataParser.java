@@ -23,14 +23,6 @@ import java.util.regex.Pattern;
  */
 public class DomainDataParser {
 
-    private String fileName;
-    private ArrayList<Domain> DomainList;
-
-    public DomainDataParser(String filename) {
-
-        this.fileName = filename;
-        this.DomainList = new ArrayList<>();
-    }
     //https://books.google.ca/books?id=G_hGOkywlhEC&pg=PT128&lpg=PT128&dq=detect+the+HTTP+header+SSL+socket+java&source=bl&ots=-luPSDBt-Q&sig=CHy0uEeTypgXzn7moy6nQeXX0rQ&hl=en&sa=X&ved=0CB4Q6AEwATgKahUKEwj84LaaurjIAhWKFT4KHdJqBj4#v=onepage&q=detect%20the%20HTTP%20header%20SSL%20socket%20java&f=false
 
     /**
@@ -38,7 +30,7 @@ public class DomainDataParser {
      *
      * @param currentDomain
      */
-    private Domain query(Domain currentDomain) {
+    private static Domain query(Domain currentDomain) {
 
         String USER_AGENT = "Mozilla/5.0";
         String ACCEPT_LANGUAGE = "en-US,en;q=0.5";
@@ -55,9 +47,8 @@ public class DomainDataParser {
         boolean unknownHost = false;
         boolean connectionTimedOut = false;
 
-        //set timeout
+        //set timeout in ms
         int timeOut = 2000;
-
 
         try {
 
@@ -79,19 +70,15 @@ public class DomainDataParser {
             socket.setEnabledCipherSuites(newSuitesArray);
 
 
-            //socket.setSoTimeout(3000);
             SSLSession sslSession = socket.getSession(); // does the startHandshake()
 
             if (sslSession.isValid()) {
-
-
 
                 // set all the attributes related to the ssl connection
                 setHTTPSInfo(sslSession, currentDomain);
 
                 //verify the Strict-Transport-Security header
                 verifyStrictTransportSecurity(currentDomain, USER_AGENT, ACCEPT_LANGUAGE);
-
 
             } else {
                 currentDomain.setIsHTTPS("false");
@@ -132,22 +119,12 @@ public class DomainDataParser {
         }  catch (Exception e) {
             e.printStackTrace();
         } finally {
+
             //for debugging
             //printSocketInfo(currentDomain, connectionTimedOut, unknownHost);
-
-            //CSV.writeToFile(this.fileName, currentDomain);
-            //DomainList.add(currentDomain);
-             return currentDomain;
-
-
-
         }
+        return currentDomain;
 
-    }
-
-    public ArrayList<Domain> getDomainList()
-    {
-        return DomainList;
     }
 
     /**
@@ -157,7 +134,7 @@ public class DomainDataParser {
      * @param USER_AGENT use fake user agent
      * @param ACCEPT_LANGUAGE
      */
-    private void verifyStrictTransportSecurity(Domain currentDomain, String USER_AGENT, String ACCEPT_LANGUAGE) {
+    private static void verifyStrictTransportSecurity(Domain currentDomain, String USER_AGENT, String ACCEPT_LANGUAGE) {
 
         URL UrlConnection;
         URLConnection con;
@@ -224,7 +201,7 @@ public class DomainDataParser {
      * @param sslSession
      * @param domain     currentDomain
      */
-    private void setHTTPSInfo(SSLSession sslSession, Domain domain) {
+    private static void setHTTPSInfo(SSLSession sslSession, Domain domain) {
 
         domain.setIsHTTPS("true");
         domain.setSSLversion(sslSession.getProtocol());
@@ -272,7 +249,7 @@ public class DomainDataParser {
 
     }
 
-    private String convertSignatureAlgorithm(String algorithm) {
+    private static String convertSignatureAlgorithm(String algorithm) {
 
         //http://docs.oracle.com/javase/7/docs/technotes/guides/security/StandardNames.html#Signature
         switch (algorithm) {
@@ -309,8 +286,6 @@ public class DomainDataParser {
                 return "RC4";
             case "MD5withRC4":
                 return "RC4";
-            //newSuitesList.add("SSL_RSA_WITH_RC4_128_SHA");
-            //newSuitesList.add("SSL_RSA_WITH_RC4_128_MD5");
         }
         return null;
     }
@@ -321,7 +296,7 @@ public class DomainDataParser {
      * @param certificate
      * @return key size string
      */
-    private String findKeySize(String certificate) {
+    private static String findKeySize(String certificate) {
         Pattern pattern = Pattern.compile(",(.+?)bits");
         Matcher matcher = pattern.matcher(certificate);
         matcher.find();
@@ -335,7 +310,7 @@ public class DomainDataParser {
      * @param input
      * @return true/false
      */
-    private boolean isHSTSlong(String input) {
+    private static boolean isHSTSlong(String input) {
         //System.out.println(input);
         String number = input.replaceAll("[^0-9]", "");
         int maxAge = Integer.parseInt(number);
@@ -343,24 +318,13 @@ public class DomainDataParser {
     }
 
 
-
     /**
-     * query the list of domains
+     * Query one domain
      *
-     * @param list list of domains
+     * @param domain domain to be queried
+     * @return domain with complete information
      */
-    public void queryDomains(List<Domain> list) {
-
-        int domain_id =1;
-        for (Domain domain : list) {
-            System.out.println("domain # :" +domain_id);
-            query(domain);
-            domain_id++;
-        }
-        System.out.println("Parsing complete, all domains were added to the csv file");
-    }
-
-    public Domain queryOneDomain(Domain domain)
+    public static Domain queryOneDomain(Domain domain)
     {
         return query(domain);
     }
