@@ -311,10 +311,11 @@ public class CSV {
                 }
             }
 
+            //for testing
             //Print the new student list
-            for (Domain domain : domainList) {
-                System.out.println(domain.toString());
-            }
+//            for (Domain domain : domainList) {
+//                System.out.println(domain.toString());
+//            }
         } catch (Exception e) {
             System.out.println("Error in CsvFileReader !!!");
             e.printStackTrace();

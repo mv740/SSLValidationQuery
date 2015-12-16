@@ -32,7 +32,14 @@ public class MultiThreadedQueryProcess {
     }
 
 
-    public void start(ArrayList<Domain> csvList, String filename) {
+    /**
+     * Start parsing process
+     *
+     * @param csvList list of domain to be parse
+     * @param filename data saved
+     * @param ThreadPool set custom value, write 0 for default value of availableProcessors*2
+     */
+    public void start(ArrayList<Domain> csvList, String filename, int ThreadPool) {
 
         //track the time
         long startTime = System.nanoTime();
@@ -41,9 +48,16 @@ public class MultiThreadedQueryProcess {
 
         List<Domain> finalList = new ArrayList<>();
 
-
+        int nThreads;
         //create pool of threads
-        ExecutorService executor = Executors.newFixedThreadPool(availableProcessors);
+        if(ThreadPool ==0)
+        {
+            nThreads = availableProcessors*2; //create double because of context switching
+            //you can increase your performance by adding 1 more until you get a max
+        }else
+            nThreads = ThreadPool;
+
+        ExecutorService executor = Executors.newFixedThreadPool(nThreads);
 
         // each worker will execute one query
         List<Future<Domain>> resultList = new ArrayList<>();

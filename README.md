@@ -1,4 +1,3 @@
-# soen321
-SOEN 321: Information Systems Security
+# SOEN 321: Information Systems Security
 
-top-1m.csv from 8 Oct 2015
+Alexa rank file top-1m.csv from 8 Oct 2015

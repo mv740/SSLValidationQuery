@@ -1,25 +1,21 @@
 import javax.net.ssl.*;
-import javax.security.cert.X509Certificate;
-import java.io.IOException;
+import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.*;
+
 
 /**
  * @author michal wozniak id 21941097
  * @author sebastian proctor-shah id 29649727
- *
- * Date Created on 10/7/2015
- * Date Updated : 11/01/2015
- *
- * DomainDataParser
- *
- * query a website using https connection (SSL) and fetch information about the certificate, key size, algorithm used...
- *
+ *         <p>
+ *         Date Created on 10/7/2015
+ *         Date Updated : 11/01/2015
+ *         <p>
+ *         DomainDataParser
+ *         <p>
+ *         query a website using https connection (SSL) and fetch information about the certificate, key size, algorithm used...
  */
 public class DomainDataParser {
 
@@ -43,7 +39,7 @@ public class DomainDataParser {
         //SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 
 
-        //error handling
+        //error handling used with printSocketInfo method for debugging
         boolean unknownHost = false;
         boolean connectionTimedOut = false;
 
@@ -55,8 +51,9 @@ public class DomainDataParser {
             //SSLSocket socket = (SSLSocket) factory.createSocket(currentDomain.getDomain(), port);
 
             // if connection take more than 3 second, stop it
-            SSLSocket socket = (SSLSocket)SSLSocketFactory.getDefault().createSocket();
-            socket.connect(new InetSocketAddress(currentDomain.getDomain(),port),timeOut);
+            SSLSocket socket = (SSLSocket) SSLSocketFactory.getDefault().createSocket();
+            socket.setSoTimeout(2000);
+            socket.connect(new InetSocketAddress(currentDomain.getDomain(), port), timeOut);
             //socket.startHandshake();
 
             //Re-enable deprecated
@@ -72,13 +69,16 @@ public class DomainDataParser {
 
             SSLSession sslSession = socket.getSession(); // does the startHandshake()
 
+
             if (sslSession.isValid()) {
 
                 // set all the attributes related to the ssl connection
                 setHTTPSInfo(sslSession, currentDomain);
 
                 //verify the Strict-Transport-Security header
-                verifyStrictTransportSecurity(currentDomain, USER_AGENT, ACCEPT_LANGUAGE);
+                // use same socket connection
+                verifyStrictTransportSecurityField(currentDomain, USER_AGENT, ACCEPT_LANGUAGE, socket);
+
 
             } else {
                 currentDomain.setIsHTTPS("false");
@@ -88,35 +88,22 @@ public class DomainDataParser {
 
         } catch (SocketTimeoutException ste) {
             connectionTimedOut = true;
-            currentDomain.setIsHTTPS("timeout");
-            currentDomain.setSSLversion("timeout");
-            currentDomain.setKeyType("timeout");
-            currentDomain.setKeySize("timeout");
-            currentDomain.setSignatureAlgorithm("timeout");
-            currentDomain.setIsHSTS("timeout");
-            currentDomain.setIsHSTSlong("timeout");
+            connectionError(currentDomain, "timeout");
 
         } catch (UnknownHostException e) {
             //unknown Host exception
             unknownHost = true;
-            currentDomain.setIsHTTPS("unknownHost");
-            currentDomain.setSSLversion("unknownHost");
-            currentDomain.setKeyType("unknownHost");
-            currentDomain.setKeySize("unknownHost");
-            currentDomain.setSignatureAlgorithm("unknownHost");
-            currentDomain.setIsHSTS("unknownHost");
-            currentDomain.setIsHSTSlong("unknownHost");
+            connectionError(currentDomain, "unknownHost");
 
-        }catch (ConnectException ce) {
-
-            // determine if connection is refused or timed out
+        } catch (ConnectException ce) {
+            //https://github.com/googlegsa/activedirectory/blob/master/src/com/google/enterprise/adaptor/ad/AdServer.java
             if (ce.getMessage().contains("Connection refused")) {
                 currentDomain.setIsHTTPS("false");
             } else {
                 connectionTimedOut = true;
             }
 
-        }  catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
 
@@ -130,68 +117,88 @@ public class DomainDataParser {
     /**
      * verify if the domain use the http header field StrictTransportSecurity
      * set the currentDomain related parameter
-     * @param currentDomain current domain used
-     * @param USER_AGENT use fake user agent
+     *
+     * @param currentDomain
+     * @param USER_AGENT
      * @param ACCEPT_LANGUAGE
+     * @param socket          current socket connection
      */
-    private static void verifyStrictTransportSecurity(Domain currentDomain, String USER_AGENT, String ACCEPT_LANGUAGE) {
-
-        URL UrlConnection;
-        URLConnection con;
-        Map<String, List<String>> map;
+    private static void verifyStrictTransportSecurityField(Domain currentDomain, String USER_AGENT, String ACCEPT_LANGUAGE, SSLSocket socket) {
+        PrintWriter s_out;
+        BufferedReader s_in;
+        String message = "HEAD / HTTP/1.1";
 
         try {
-            UrlConnection = new URL("https://" + currentDomain.getDomain());
-            //System.out.println("VALID: " + UrlConnection.toString());
+            s_out = new PrintWriter(socket.getOutputStream(), true);
+            s_in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            s_out.println(message);
+            s_out.println("Host: " + currentDomain.getDomain());
+            s_out.println("Accept-Language: " + ACCEPT_LANGUAGE);
+            s_out.println("User-Agent: " + USER_AGENT);
+            s_out.println();
+            String response;
 
-            con = UrlConnection.openConnection();
-            con.setConnectTimeout(2000);
-            con.setRequestProperty("User-Agent", USER_AGENT);
-            con.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
+            Map<String, String> headerFields = new HashMap<>();
+            while ((response = s_in.readLine()) != null) {
+                int divider = response.indexOf(":");
+                if (divider == -1) // not found then it is status code line
+                {
+                    if (response.length() > 0) {
+                        //store status message
+                        //ignore "HTTP/1.1 " message part
+                        headerFields.put("status", response.substring(("HTTP/1.1").length(), response.length()));
+                    }
 
-            map = con.getHeaderFields();
-            //check if we get the header
-            if(map.size()>0)
-            {
-                List<String> strictTransportSecurity = map.get("Strict-Transport-Security");
+                } else {
+                    String subject = response.substring(0, divider);
+                    String parameter = response.substring(divider + 1, response.length());
+                    headerFields.put(subject, parameter);
+                }
 
-                //check if f
-                if (strictTransportSecurity == null) {
+                //System.out.println(response);
+
+            }
+            s_in.close();
+
+            if (!headerFields.isEmpty()) {
+                //map.get("Strict-Transport-Security")
+                String value = headerFields.get("Strict-Transport-Security");
+                if (value != null) {
+                    //System.out.println(value);
+                    currentDomain.setIsHSTS("true");
+                    String subject = "max-age=";
+                    currentDomain.setIsHSTSlong(String.valueOf(isHSTSlong(value.substring(subject.length()))));
+                } else {
                     currentDomain.setIsHSTS("false");
                     currentDomain.setIsHSTSlong("false");
-                } else {
-                    for (String header : strictTransportSecurity) {
-                        currentDomain.setIsHSTS("true");
-                        currentDomain.setIsHSTSlong(String.valueOf(isHSTSlong(header)));
-
-                    }
                 }
-            }
-            else
-            {
+            } else {
                 currentDomain.setIsHSTS("?");
                 currentDomain.setIsHSTSlong("?");
             }
-        }catch (SocketTimeoutException e)
-        {
+        } catch (InterruptedIOException e) {
+            //timeout during read
             currentDomain.setIsHSTS("?");
             currentDomain.setIsHSTSlong("?");
+
+            //System.out.println("timeout"+ currentDomain.getDomain());
+
 
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
     }
 
-
-    /**
-     * Debugging purpose : print all header field of a http connection
-     *
-     * @param connection
-     */
-    private void printHeaderFields(URLConnection connection) {
-        for (Map.Entry<String, List<String>> header : connection.getHeaderFields().entrySet()) {
-            System.out.println(header.getKey() + "=" + header.getValue());
-        }
+    private static void connectionError(Domain currentDomain, String timeout) {
+        currentDomain.setIsHTTPS(timeout);
+        currentDomain.setSSLversion(timeout);
+        currentDomain.setKeyType(timeout);
+        currentDomain.setKeySize(timeout);
+        currentDomain.setSignatureAlgorithm(timeout);
+        currentDomain.setIsHSTS(timeout);
+        currentDomain.setIsHSTSlong(timeout);
     }
 
 
@@ -207,7 +214,7 @@ public class DomainDataParser {
         domain.setSSLversion(sslSession.getProtocol());
 
         domain.setSSLversion(sslSession.getProtocol());
-        X509Certificate[] certificates = new X509Certificate[0];
+        javax.security.cert.X509Certificate[] certificates = new javax.security.cert.X509Certificate[0];
         try {
             certificates = sslSession.getPeerCertificateChain();
         } catch (SSLPeerUnverifiedException e) {
@@ -216,9 +223,19 @@ public class DomainDataParser {
 
         domain.setKeyType(certificates[0].getPublicKey().getAlgorithm());
 
-        String certificateString = (String.valueOf(certificates[0].getPublicKey()));
-        domain.setKeySize(findKeySize(certificateString));
 
+        int keySize = 0;
+        if (certificates[0].getPublicKey() instanceof RSAPublicKey) {
+            //System.out.println(((RSAPublicKey) certificates[0].getPublicKey()).getModulus().bitLength());
+            keySize = ((RSAPublicKey) certificates[0].getPublicKey()).getModulus().bitLength();
+
+        } else if (certificates[0].getPublicKey() instanceof ECPublicKey) {
+            //System.out.println(certificates[0].getPublicKey());
+            //System.out.println(((ECPublicKey) certificates[0].getPublicKey()).getParams().getOrder().bitLength());
+            keySize = ((ECPublicKey) certificates[0].getPublicKey()).getParams().getOrder().bitLength();
+        }
+
+        domain.setKeySize(String.valueOf(keySize));
         String signatureAlgorithm = certificates[0].getSigAlgName();
         domain.setSignatureAlgorithm(convertSignatureAlgorithm(signatureAlgorithm));
     }
@@ -290,19 +307,6 @@ public class DomainDataParser {
         return null;
     }
 
-    /**
-     * parse the certificate to get the key size
-     *
-     * @param certificate
-     * @return key size string
-     */
-    private static String findKeySize(String certificate) {
-        Pattern pattern = Pattern.compile(",(.+?)bits");
-        Matcher matcher = pattern.matcher(certificate);
-        matcher.find();
-        return matcher.group(1);
-    }
-
 
     /**
      * check if HSTS is longer than one month
@@ -324,8 +328,7 @@ public class DomainDataParser {
      * @param domain domain to be queried
      * @return domain with complete information
      */
-    public static Domain queryOneDomain(Domain domain)
-    {
+    public static Domain queryOneDomain(Domain domain) {
         return query(domain);
     }
 }
